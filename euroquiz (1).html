@@ -1,0 +1,1044 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>EuroQuiz 🏆</title>
+<style>
+  :root {
+    --bg:#0a0e1a;--card:#111827;--card2:#1a2235;--border:#2a3a55;
+    --gold:#f5c518;--blue:#3b82f6;--green:#22c55e;--red:#ef4444;
+    --text:#e2e8f0;--muted:#64748b;--accent:#6366f1;--purple:#8b5cf6;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{background:var(--bg);color:var(--text);font-family:'Segoe UI',sans-serif;min-height:100vh;}
+  .screen{display:none;min-height:100vh;padding:20px;}
+  .screen.active{display:flex;flex-direction:column;align-items:center;justify-content:center;}
+  .logo{font-size:2.8rem;font-weight:900;text-align:center;margin-bottom:8px;}
+  .logo span{color:var(--gold);}
+  .subtitle{color:var(--muted);text-align:center;margin-bottom:30px;font-size:1rem;}
+  .card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:28px;width:100%;max-width:420px;}
+  input[type=text],input[type=password]{width:100%;padding:12px 16px;background:var(--card2);border:1px solid var(--border);border-radius:10px;color:var(--text);font-size:1rem;margin-bottom:14px;outline:none;transition:border-color .2s;}
+  input:focus{border-color:var(--blue);}
+  .btn{padding:12px 24px;border-radius:10px;border:none;cursor:pointer;font-size:1rem;font-weight:600;transition:all .2s;width:100%;margin-bottom:10px;}
+  .btn-primary{background:var(--blue);color:#fff;}
+  .btn-primary:hover{background:#2563eb;transform:translateY(-1px);}
+  .btn-gold{background:var(--gold);color:#000;}
+  .btn-gold:hover{background:#e6b800;transform:translateY(-1px);}
+  .btn-outline{background:transparent;color:var(--text);border:1px solid var(--border);}
+  .btn-outline:hover{border-color:var(--blue);color:var(--blue);}
+  .btn-purple{background:var(--purple);color:#fff;}
+  .btn-purple:hover{background:#7c3aed;transform:translateY(-1px);}
+  .btn-sm{padding:8px 16px;font-size:.875rem;width:auto;margin-bottom:0;}
+  .btn:disabled{opacity:.5;cursor:not-allowed;transform:none;}
+  .modes{display:grid;grid-template-columns:1fr 1fr;gap:12px;width:100%;max-width:620px;margin-bottom:20px;}
+  .mode-card{background:var(--card);border:2px solid var(--border);border-radius:14px;padding:18px 12px;text-align:center;cursor:pointer;transition:all .2s;}
+  .mode-card:hover{border-color:var(--blue);transform:translateY(-2px);}
+  .mode-card.new-mode{border-color:var(--purple);}
+  .mode-card.new-mode:hover{border-color:var(--accent);}
+  .mode-card .icon{font-size:1.8rem;margin-bottom:6px;}
+  .mode-card .name{font-weight:700;font-size:.9rem;}
+  .mode-card .desc{color:var(--muted);font-size:.72rem;margin-top:4px;}
+  .mode-card .badge-new{display:inline-block;background:var(--purple);color:#fff;font-size:.6rem;font-weight:800;padding:2px 6px;border-radius:4px;margin-left:4px;vertical-align:middle;}
+  .game-header{display:flex;justify-content:space-between;align-items:center;width:100%;max-width:640px;margin-bottom:20px;padding:14px 20px;background:var(--card);border-radius:12px;border:1px solid var(--border);flex-wrap:wrap;gap:8px;}
+  .stat{text-align:center;}
+  .stat-val{font-size:1.5rem;font-weight:800;color:var(--gold);}
+  .stat-label{font-size:.7rem;color:var(--muted);text-transform:uppercase;letter-spacing:1px;}
+  .input-area{width:100%;max-width:600px;display:flex;gap:10px;margin-bottom:20px;}
+  .input-area input{flex:1;margin-bottom:0;font-size:1.1rem;}
+  .input-area .btn{width:auto;padding:12px 20px;margin-bottom:0;}
+  .countries-grid{display:flex;flex-wrap:wrap;gap:8px;width:100%;max-width:600px;justify-content:center;margin-bottom:20px;}
+  .country-tile{background:var(--card2);border:1px solid var(--border);border-radius:8px;padding:8px 14px;font-size:.85rem;transition:all .3s;min-width:100px;text-align:center;}
+  .country-tile.found{background:#14532d;border-color:var(--green);color:var(--green);font-weight:700;animation:pop .3s ease;}
+  @keyframes pop{0%{transform:scale(1.3)}100%{transform:scale(1)}}
+  .hearts{font-size:1.5rem;letter-spacing:4px;}
+  .quiz-question{font-size:1.1rem;font-weight:600;text-align:center;margin-bottom:20px;line-height:1.5;max-width:560px;}
+  .quiz-options{display:grid;grid-template-columns:1fr 1fr;gap:12px;width:100%;max-width:560px;margin-bottom:20px;}
+  .quiz-opt{background:var(--card2);border:2px solid var(--border);border-radius:12px;padding:16px;text-align:center;cursor:pointer;font-weight:600;transition:all .2s;font-size:.95rem;}
+  .quiz-opt:hover:not(.disabled){border-color:var(--blue);background:#1e3a5f;}
+  .quiz-opt.correct{border-color:var(--green);background:#14532d;color:var(--green);}
+  .quiz-opt.wrong{border-color:var(--red);background:#450a0a;color:var(--red);}
+  .quiz-opt.disabled{cursor:default;}
+  .progress-bar{width:100%;max-width:560px;height:6px;background:var(--border);border-radius:3px;margin-bottom:20px;overflow:hidden;}
+  .progress-fill{height:100%;background:var(--gold);border-radius:3px;transition:width .3s;}
+  .year-display{font-size:4rem;font-weight:900;color:var(--gold);text-align:center;margin-bottom:20px;text-shadow:0 0 30px rgba(245,197,24,.4);}
+  .lb-row{display:flex;align-items:center;gap:14px;padding:12px;background:var(--card2);border-radius:10px;margin-bottom:8px;}
+  .lb-rank{font-size:1.2rem;font-weight:900;color:var(--gold);min-width:32px;}
+  .lb-name{flex:1;font-weight:600;}
+  .lb-score{color:var(--gold);font-weight:700;}
+  .lb-mode{font-size:.7rem;color:var(--muted);}
+  .result-big{font-size:4rem;text-align:center;margin-bottom:10px;}
+  .result-title{font-size:1.8rem;font-weight:900;text-align:center;margin-bottom:8px;}
+  .result-score{font-size:1.2rem;color:var(--gold);text-align:center;margin-bottom:24px;}
+  .nav{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;}
+  #toast{position:fixed;top:20px;left:50%;transform:translateX(-50%);background:var(--green);color:#fff;padding:12px 24px;border-radius:10px;font-weight:700;opacity:0;transition:opacity .3s;z-index:999;pointer-events:none;max-width:90vw;text-align:center;}
+  #toast.show{opacity:1;}
+  #toast.error{background:var(--red);}
+  #toast.info{background:var(--accent);}
+  #toast.gold{background:var(--gold);color:#000;}
+  .divider{display:flex;align-items:center;gap:10px;margin:14px 0;color:var(--muted);font-size:.85rem;}
+  .divider::before,.divider::after{content:'';flex:1;height:1px;background:var(--border);}
+  .user-bar{position:fixed;top:0;left:0;right:0;background:var(--card);border-bottom:1px solid var(--border);padding:8px 16px;display:flex;justify-content:space-between;align-items:center;z-index:100;flex-wrap:wrap;gap:6px;}
+  .user-bar .username{font-weight:700;color:var(--gold);}
+  .hint-text{color:var(--muted);font-size:.8rem;text-align:center;margin-bottom:10px;}
+  .score-badge{display:inline-block;background:var(--card2);border:1px solid var(--gold);border-radius:20px;padding:4px 14px;color:var(--gold);font-weight:700;font-size:.85rem;margin-right:6px;}
+  label{display:block;margin-bottom:6px;color:var(--muted);font-size:.85rem;}
+  .tabs{display:flex;gap:0;margin-bottom:20px;border-radius:10px;overflow:hidden;border:1px solid var(--border);}
+  .tab{flex:1;padding:10px;text-align:center;cursor:pointer;background:var(--card2);font-weight:600;font-size:.85rem;transition:background .2s;}
+  .tab.active{background:var(--blue);color:#fff;}
+  h3{margin-bottom:16px;font-size:1.1rem;}
+  .top-pt{padding-top:65px;}
+  .loading{display:flex;align-items:center;justify-content:center;gap:10px;color:var(--muted);padding:20px;}
+  .spinner{width:20px;height:20px;border:2px solid var(--border);border-top-color:var(--blue);border-radius:50%;animation:spin .6s linear infinite;}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  .lang-switcher{position:fixed;bottom:20px;right:20px;display:flex;gap:6px;z-index:200;}
+  .lang-btn{background:var(--card);border:1px solid var(--border);border-radius:8px;padding:6px 12px;cursor:pointer;font-size:1rem;transition:all .2s;color:var(--text);}
+  .lang-btn.active{border-color:var(--gold);}
+  /* SNIPER */
+  .clues-list{width:100%;max-width:560px;margin-bottom:20px;}
+  .clue-item{background:var(--card2);border:1px solid var(--border);border-radius:10px;padding:14px 18px;margin-bottom:10px;font-size:1rem;opacity:0;transform:translateY(10px);transition:all .4s;}
+  .clue-item.show{opacity:1;transform:translateY(0);}
+  .clue-num{color:var(--gold);font-weight:800;margin-right:8px;}
+  .year-input-big{font-size:2rem;font-weight:900;text-align:center;background:var(--card2);border:2px solid var(--border);border-radius:14px;color:var(--gold);padding:14px;width:200px;outline:none;}
+  .year-input-big:focus{border-color:var(--gold);}
+  /* WHO AM I */
+  .player-clues{width:100%;max-width:560px;margin-bottom:20px;}
+  .player-clue{background:var(--card2);border-left:3px solid var(--purple);border-radius:0 10px 10px 0;padding:12px 16px;margin-bottom:8px;opacity:0;transition:all .5s;}
+  .player-clue.show{opacity:1;}
+  /* SEDE */
+  .stadium-display{font-size:1.4rem;font-weight:900;color:var(--text);text-align:center;margin-bottom:6px;}
+  .country-display{font-size:1rem;color:var(--muted);text-align:center;margin-bottom:20px;}
+  /* BADGES */
+  .badges-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:12px;}
+  .badge{background:var(--card2);border:1px solid var(--border);border-radius:12px;padding:12px 8px;text-align:center;}
+  .badge.earned{border-color:var(--gold);background:#1a1500;}
+  .badge .badge-icon{font-size:1.8rem;margin-bottom:4px;}
+  .badge .badge-name{font-size:.72rem;font-weight:700;color:var(--muted);}
+  .badge.earned .badge-name{color:var(--gold);}
+  /* DAILY */
+  .daily-banner{background:linear-gradient(135deg,#1a1500,#2a2000);border:2px solid var(--gold);border-radius:14px;padding:18px;text-align:center;margin-bottom:20px;width:100%;max-width:520px;}
+  .daily-banner .daily-icon{font-size:2.5rem;margin-bottom:6px;}
+  .daily-banner .daily-title{font-size:1.1rem;font-weight:800;color:var(--gold);}
+  .daily-banner .daily-sub{font-size:.8rem;color:var(--muted);margin-top:4px;}
+  .streak-fire{font-size:1.2rem;}
+  /* CONFETTI */
+  .confetti-piece{position:fixed;width:10px;height:10px;border-radius:2px;animation:confetti-fall 1.5s ease-in forwards;pointer-events:none;z-index:9999;}
+  @keyframes confetti-fall{0%{transform:translateY(-20px) rotate(0deg);opacity:1;}100%{transform:translateY(100vh) rotate(720deg);opacity:0;}}
+</style>
+</head>
+<body>
+<div id="toast"></div>
+<div class="lang-switcher">
+  <button class="lang-btn active" id="btnES" onclick="setLang('es')">🇪🇸 ES</button>
+  <button class="lang-btn" id="btnEN" onclick="setLang('en')">🇬🇧 EN</button>
+</div>
+
+<div class="user-bar" id="userBar" style="display:none">
+  <div><span class="username" id="barUsername">—</span> <span id="barStreak" class="streak-fire"></span></div>
+  <div>
+    <span class="score-badge" id="barScore">0 pts</span>
+    <button class="btn btn-outline btn-sm" onclick="goHome()">🏠</button>
+    <button class="btn btn-outline btn-sm" style="margin-left:4px" onclick="logout()">⏏️</button>
+  </div>
+</div>
+
+<!-- LOGIN -->
+<div class="screen active" id="screenLogin">
+  <div class="logo">Euro<span>Quiz</span> 🏆</div>
+  <p class="subtitle" id="txtSubtitle">¿Cuánto sabes de la Eurocopa?</p>
+  <div class="card">
+    <div class="tabs">
+      <div class="tab active" id="tabLoginBtn" onclick="switchTab('login')">Iniciar sesión</div>
+      <div class="tab" id="tabRegisterBtn" onclick="switchTab('register')">Registrarse</div>
+    </div>
+    <div id="tabLogin">
+      <label>Usuario</label>
+      <input type="text" id="loginUser" placeholder="Tu nombre de usuario">
+      <label>Contraseña</label>
+      <input type="password" id="loginPass" placeholder="••••••••" onkeydown="if(event.key==='Enter')login()">
+      <button class="btn btn-gold" id="btnLogin" onclick="login()">Entrar ⚽</button>
+      <div class="divider">o</div>
+      <button class="btn btn-outline" onclick="guestLogin()">Jugar como invitado</button>
+    </div>
+    <div id="tabRegister" style="display:none">
+      <label>Usuario</label>
+      <input type="text" id="regUser" placeholder="Elige un nombre de usuario">
+      <label>Contraseña</label>
+      <input type="password" id="regPass" placeholder="Mínimo 4 caracteres" onkeydown="if(event.key==='Enter')register()">
+      <button class="btn btn-primary" id="btnRegister" onclick="register()">Crear cuenta 🎉</button>
+    </div>
+  </div>
+</div>
+
+<!-- HOME -->
+<div class="screen top-pt" id="screenHome">
+  <div class="logo">Euro<span>Quiz</span> 🏆</div>
+  <p class="subtitle">Elige un modo de juego</p>
+  <div id="dailyBannerHome"></div>
+  <div class="modes">
+    <div class="mode-card" onclick="startMode('contrarreloj')"><div class="icon">⚡</div><div class="name">Contrarreloj</div><div class="desc">Nombra todos los campeones antes de que acabe el tiempo</div></div>
+    <div class="mode-card" onclick="startMode('supervivencia')"><div class="icon">❤️</div><div class="name">Supervivencia</div><div class="desc">3 vidas — cada fallo te cuesta una</div></div>
+    <div class="mode-card" onclick="startMode('años')"><div class="icon">📅</div><div class="name">Por año</div><div class="desc">Te damos el año, tú dices el campeón</div></div>
+    <div class="mode-card" onclick="startMode('quiz')"><div class="icon">🃏</div><div class="name">Quiz Curioso</div><div class="desc">Goleadores, MVP, datos únicos de cada edición</div></div>
+    <div class="mode-card new-mode" onclick="startMode('sniper')"><div class="icon">🎯</div><div class="name">Sniper <span class="badge-new">NEW</span></div><div class="desc">3 pistas de una Eurocopa, adivina el año exacto</div></div>
+    <div class="mode-card new-mode" onclick="startMode('whoareyou')"><div class="icon">📸</div><div class="name">¿Quién soy? <span class="badge-new">NEW</span></div><div class="desc">Pistas sobre un jugador mítico, adivina quién es</div></div>
+    <div class="mode-card new-mode" onclick="startMode('sede')"><div class="icon">🏟️</div><div class="name">La Sede <span class="badge-new">NEW</span></div><div class="desc">Ciudad final → ¿quién ganó ese año?</div></div>
+    <div class="mode-card" onclick="startMode('daily')" style="border-color:var(--gold)"><div class="icon">📆</div><div class="name">Reto Diario <span class="badge-new" style="background:var(--gold);color:#000">HOY</span></div><div class="desc">Un reto nuevo cada día para todos</div></div>
+  </div>
+  <div class="nav">
+    <button class="btn btn-outline btn-sm" onclick="showLeaderboard()">🏅 Clasificación</button>
+    <button class="btn btn-outline btn-sm" onclick="showStats()">📊 Mis stats</button>
+    <button class="btn btn-outline btn-sm" onclick="showBadges()">🎖️ Logros</button>
+  </div>
+</div>
+
+<!-- NOMBRAR -->
+<div class="screen top-pt" id="screenNombrar">
+  <div class="game-header">
+    <div class="stat"><div class="stat-val" id="statFound">0</div><div class="stat-label">Encontrados</div></div>
+    <div class="stat"><div class="stat-val" id="statTimer">—</div><div class="stat-label" id="statTimerLabel">Tiempo</div></div>
+    <div class="stat"><div id="statLives" class="hearts">❤️❤️❤️</div><div class="stat-label">Vidas</div></div>
+    <div class="stat"><div class="stat-val" id="statPts">0</div><div class="stat-label">Puntos</div></div>
+  </div>
+  <div class="input-area">
+    <input type="text" id="countryInput" placeholder="Escribe un país campeón..." autocomplete="off" onkeydown="if(event.key==='Enter')checkCountry()">
+    <button class="btn btn-primary btn-sm" onclick="checkCountry()">✓</button>
+    <button class="btn btn-outline btn-sm" onclick="useHint()">💡 Pista (-50)</button>
+  </div>
+  <div class="hint-text" id="hintText"></div>
+  <div class="countries-grid" id="countriesGrid"></div>
+  <button class="btn btn-outline btn-sm" style="margin-top:10px" onclick="goHome()">Abandonar</button>
+</div>
+
+<!-- AÑO -->
+<div class="screen top-pt" id="screenAños">
+  <div class="game-header">
+    <div class="stat"><div class="stat-val" id="yearQ">1/17</div><div class="stat-label">Pregunta</div></div>
+    <div class="stat"><div class="stat-val" id="yearStreak">0</div><div class="stat-label">Racha</div></div>
+    <div class="stat"><div class="stat-val" id="yearPts">0</div><div class="stat-label">Puntos</div></div>
+  </div>
+  <div class="year-display" id="yearDisplay">2024</div>
+  <p style="color:var(--muted);text-align:center;margin-bottom:16px">¿Quién ganó la Eurocopa este año?</p>
+  <div class="input-area" style="max-width:500px">
+    <input type="text" id="yearInput" placeholder="País campeón..." autocomplete="off" onkeydown="if(event.key==='Enter')checkYear()">
+    <button class="btn btn-primary btn-sm" onclick="checkYear()">✓</button>
+  </div>
+  <div id="yearFeedback" style="text-align:center;margin-bottom:14px;font-weight:700;min-height:24px"></div>
+  <button class="btn btn-outline btn-sm" onclick="goHome()">Abandonar</button>
+</div>
+
+<!-- QUIZ -->
+<div class="screen top-pt" id="screenQuiz">
+  <div class="game-header">
+    <div class="stat"><div class="stat-val" id="qNum">1/15</div><div class="stat-label">Pregunta</div></div>
+    <div class="stat"><div class="stat-val" id="qTimer">15</div><div class="stat-label">Segundos</div></div>
+    <div class="stat"><div class="stat-val" id="qPts">0</div><div class="stat-label">Puntos</div></div>
+  </div>
+  <div class="progress-bar"><div class="progress-fill" id="qProgress" style="width:5%"></div></div>
+  <div class="quiz-question" id="qQuestion"></div>
+  <div class="quiz-options" id="qOptions"></div>
+</div>
+
+<!-- SNIPER -->
+<div class="screen top-pt" id="screenSniper">
+  <div class="game-header">
+    <div class="stat"><div class="stat-val" id="sniperQ">1/8</div><div class="stat-label">Ronda</div></div>
+    <div class="stat"><div class="stat-val" id="sniperPts">0</div><div class="stat-label">Puntos</div></div>
+    <div class="stat"><div class="stat-val" id="sniperClues">0/3</div><div class="stat-label">Pistas</div></div>
+  </div>
+  <p style="color:var(--muted);text-align:center;margin-bottom:14px;font-size:.9rem">Lee las pistas y adivina el año de la Eurocopa 🎯</p>
+  <div class="clues-list" id="cluesList"></div>
+  <div style="display:flex;gap:12px;align-items:center;margin-bottom:16px;flex-wrap:wrap;justify-content:center;">
+    <input class="year-input-big" type="number" id="sniperInput" placeholder="19??" min="1960" max="2024">
+    <button class="btn btn-gold btn-sm" onclick="checkSniper()" style="height:60px;font-size:1.1rem;">🎯 Disparar</button>
+  </div>
+  <button class="btn btn-outline btn-sm" id="btnNextClue" onclick="showNextClue()">💡 Siguiente pista (-100 pts)</button>
+  <div id="sniperFeedback" style="text-align:center;margin-top:14px;font-weight:700;min-height:24px"></div>
+  <button class="btn btn-outline btn-sm" style="margin-top:12px" onclick="goHome()">Abandonar</button>
+</div>
+
+<!-- WHO ARE YOU -->
+<div class="screen top-pt" id="screenWhoAreYou">
+  <div class="game-header">
+    <div class="stat"><div class="stat-val" id="whoQ">1/8</div><div class="stat-label">Jugador</div></div>
+    <div class="stat"><div class="stat-val" id="whoTimer">20</div><div class="stat-label">Segundos</div></div>
+    <div class="stat"><div class="stat-val" id="whoPts">0</div><div class="stat-label">Puntos</div></div>
+  </div>
+  <p style="color:var(--muted);text-align:center;margin-bottom:14px">📸 ¿Quién soy? Lee las pistas y adivina el jugador</p>
+  <div class="player-clues" id="playerClues"></div>
+  <div class="quiz-options" id="whoOptions" style="max-width:560px;width:100%;"></div>
+  <button class="btn btn-outline btn-sm" style="margin-top:4px" onclick="goHome()">Abandonar</button>
+</div>
+
+<!-- SEDE -->
+<div class="screen top-pt" id="screenSede">
+  <div class="game-header">
+    <div class="stat"><div class="stat-val" id="sedeQ">1/10</div><div class="stat-label">Final</div></div>
+    <div class="stat"><div class="stat-val" id="sedeStreak">0</div><div class="stat-label">Racha</div></div>
+    <div class="stat"><div class="stat-val" id="sedePts">0</div><div class="stat-label">Puntos</div></div>
+  </div>
+  <div style="background:var(--card2);border:1px solid var(--border);border-radius:14px;padding:20px;text-align:center;margin-bottom:20px;width:100%;max-width:500px;">
+    <div style="font-size:.8rem;color:var(--muted);margin-bottom:6px">🏟️ SEDE DE LA FINAL</div>
+    <div class="stadium-display" id="stadiumDisplay">Wembley, Londres</div>
+    <div class="country-display" id="countryDisplay">Reino Unido · 1996</div>
+  </div>
+  <p style="color:var(--muted);text-align:center;margin-bottom:16px">¿Qué país ganó la Eurocopa ese año?</p>
+  <div class="quiz-options" id="sedeOptions" style="max-width:500px;width:100%;"></div>
+  <button class="btn btn-outline btn-sm" style="margin-top:4px" onclick="goHome()">Abandonar</button>
+</div>
+
+<!-- DAILY -->
+<div class="screen top-pt" id="screenDaily">
+  <div class="daily-banner" style="margin-bottom:16px">
+    <div class="daily-icon">📆</div>
+    <div class="daily-title" id="dailyTitle">Reto del Día</div>
+    <div class="daily-sub" id="dailySub">Un reto especial para hoy</div>
+  </div>
+  <div class="game-header" style="max-width:500px">
+    <div class="stat"><div class="stat-val" id="dailyQ">1/5</div><div class="stat-label">Pregunta</div></div>
+    <div class="stat"><div class="stat-val" id="dailyTimer">20</div><div class="stat-label">Segundos</div></div>
+    <div class="stat"><div class="stat-val" id="dailyPts">0</div><div class="stat-label">Puntos</div></div>
+  </div>
+  <div class="progress-bar" style="max-width:500px"><div class="progress-fill" id="dailyProgress" style="width:0%"></div></div>
+  <div class="quiz-question" id="dailyQuestion" style="max-width:500px"></div>
+  <div class="quiz-options" id="dailyOptions" style="max-width:500px;width:100%;"></div>
+</div>
+
+<!-- RESULT -->
+<div class="screen" id="screenResult">
+  <div class="result-big" id="resultEmoji">🏆</div>
+  <div class="result-title" id="resultTitle">¡Enhorabuena!</div>
+  <div class="result-score" id="resultScore">Puntuación: 0</div>
+  <div id="newBadgesArea" style="margin-bottom:16px;text-align:center;"></div>
+  <div class="card" style="margin-bottom:20px"><div id="resultDetails"></div></div>
+  <div class="nav">
+    <button class="btn btn-gold" onclick="goHome()">🏠 Menú</button>
+    <button class="btn btn-primary" onclick="playAgain()">🔄 De nuevo</button>
+  </div>
+</div>
+
+<!-- LEADERBOARD -->
+<div class="screen top-pt" id="screenLeaderboard">
+  <h2 style="margin-bottom:20px">🏅 Clasificación Global</h2>
+  <div style="width:100%;max-width:500px;margin-bottom:20px" id="lbContent"></div>
+  <button class="btn btn-outline btn-sm" onclick="goHome()">← Volver</button>
+</div>
+
+<!-- STATS -->
+<div class="screen top-pt" id="screenStats">
+  <h2 style="margin-bottom:20px">📊 Mis estadísticas</h2>
+  <div class="card" style="max-width:500px;margin-bottom:20px" id="statsContent"></div>
+  <button class="btn btn-outline btn-sm" onclick="goHome()">← Volver</button>
+</div>
+
+<!-- BADGES -->
+<div class="screen top-pt" id="screenBadges">
+  <h2 style="margin-bottom:20px">🎖️ Logros e Insignias</h2>
+  <div style="width:100%;max-width:500px;margin-bottom:20px" id="badgesContent"></div>
+  <button class="btn btn-outline btn-sm" onclick="goHome()">← Volver</button>
+</div>
+
+<script>
+// ==================== SUPABASE ====================
+const SB_URL='https://xzwrqmkvcktzenybpzbv.supabase.co';
+const SB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh6d3JxbWt2Y2t0emVueWJwemJ2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA2NzgyOTUsImV4cCI6MjA5NjI1NDI5NX0.HSjg7YS5KG3RgquTviagfbn7KAfHaLOGMcXuf8voIq4';
+const sbH={'Content-Type':'application/json','apikey':SB_KEY,'Authorization':'Bearer '+SB_KEY};
+async function sbGet(t,q=''){const r=await fetch(`${SB_URL}/rest/v1/${t}${q}`,{headers:{...sbH,'Prefer':'return=representation'}});return r.json();}
+async function sbPost(t,b){const r=await fetch(`${SB_URL}/rest/v1/${t}`,{method:'POST',headers:{...sbH,'Prefer':'return=representation'},body:JSON.stringify(b)});return r.json();}
+async function sbPatch(t,q,b){const r=await fetch(`${SB_URL}/rest/v1/${t}${q}`,{method:'PATCH',headers:{...sbH,'Prefer':'return=representation'},body:JSON.stringify(b)});return r.json();}
+
+// ==================== LANG ====================
+let lang=localStorage.getItem('euroquiz_lang')||'es';
+function setLang(l){
+  lang=l;localStorage.setItem('euroquiz_lang',l);
+  document.getElementById('btnES').classList.toggle('active',l==='es');
+  document.getElementById('btnEN').classList.toggle('active',l==='en');
+  applyLang();
+}
+function applyLang(){
+  const s=(id,es,en)=>{const el=document.getElementById(id);if(el)el.textContent=lang==='en'?en:es;};
+  const p=(id,es,en)=>{const el=document.getElementById(id);if(el)el.placeholder=lang==='en'?en:es;};
+  s('txtSubtitle','¿Cuánto sabes de la Eurocopa?','How much do you know about the Euros?');
+  s('tabLoginBtn','Iniciar sesión','Log in');
+  s('tabRegisterBtn','Registrarse','Sign up');
+  s('btnLogin','Entrar ⚽','Enter ⚽');
+  s('btnRegister','Crear cuenta 🎉','Create account 🎉');
+  p('loginUser','Tu nombre de usuario','Your username');
+  p('regUser','Elige un nombre de usuario','Choose a username');
+  p('regPass','Mínimo 4 caracteres','At least 4 characters');
+  p('countryInput','Escribe un país campeón...','Type a champion country...');
+  p('yearInput','País campeón...','Champion country...');
+  // Mode cards
+  const modes=[
+    ['Contrarreloj','Time Attack','Nombra todos los campeones antes de que acabe el tiempo','Name all champions before time runs out'],
+    ['Supervivencia','Survival','3 vidas — cada fallo te cuesta una','3 lives — every wrong answer costs one'],
+    ['Por año','By year','Te damos el año, tú dices el campeón','We give you the year, you name the champion'],
+    ['Quiz Curioso','Trivia Quiz','Goleadores, MVP, datos únicos de cada edición','Top scorers, MVPs, unique facts from each edition'],
+    ['Sniper','Sniper','3 pistas de una Eurocopa, adivina el año exacto','3 clues about a Euro, guess the exact year'],
+    ['¿Quién soy?','Who am I?','Pistas sobre un jugador mítico, adivina quién es','Clues about a legend, guess who they are'],
+    ['La Sede','The Venue','Ciudad final → ¿quién ganó ese año?','Final city → who won that year?'],
+    ['Reto Diario','Daily Challenge','Un reto nuevo cada día para todos','A new challenge every day for everyone'],
+  ];
+  document.querySelectorAll('.mode-card').forEach((card,i)=>{
+    if(!modes[i])return;
+    const name=card.querySelector('.name');const desc=card.querySelector('.desc');
+    if(name){const badge=name.querySelector('.badge-new');const t=lang==='en'?modes[i][1]:modes[i][0];name.textContent=t;if(badge)name.appendChild(badge);}
+    if(desc)desc.textContent=lang==='en'?modes[i][3]:modes[i][2];
+  });
+  // Buttons
+  s('btnLeaderboard',lang==='en'?'🏅 Leaderboard':'🏅 Clasificación',lang==='en'?'🏅 Leaderboard':'🏅 Clasificación');
+  s('btnStats',lang==='en'?'📊 My stats':'📊 Mis stats',lang==='en'?'📊 My stats':'📊 Mis stats');
+  // Game labels
+  document.querySelectorAll('.stat-label').forEach(el=>{
+    const t=el.textContent.trim();
+    const map={'Encontrados':'Found','Found':'Encontrados','Tiempo':'Time','Time':'Tiempo','Vidas':'Lives','Lives':'Vidas','Puntos':'Points','Points':'Puntos','Racha':'Streak','Streak':'Racha','Pregunta':'Question','Question':'Pregunta','Segundos':'Seconds','Seconds':'Segundos','Ronda':'Round','Round':'Ronda','Jugador':'Player','Player':'Jugador','Final':'Final'};
+    if(lang==='en'&&map[t])el.textContent=map[t];
+    else if(lang==='es'&&map[t])el.textContent=map[t];
+  });
+  // Abandon buttons
+  document.querySelectorAll('[id^="btnAbandon"], .btn-outline.btn-sm').forEach(el=>{
+    if(el.textContent==='Abandonar'||el.textContent==='Quit')el.textContent=lang==='en'?'Quit':'Abandonar';
+    if(el.textContent==='← Volver'||el.textContent==='← Back')el.textContent=lang==='en'?'← Back':'← Volver';
+  });
+  s('txtWhoWon','¿Quién ganó la Eurocopa este año?','Who won the Euros this year?');
+}
+
+// ==================== DATA ====================
+const WINNERS=[
+  {year:1960,countryES:"URSS",country:"USSR",flag:"🇷🇺",hintES:"País comunista, primer campeón",hintEN:"Communist country, first ever champion",stadium:"Parque de los Príncipes",city:"París, Francia"},
+  {year:1964,countryES:"España",country:"Spain",flag:"🇪🇸",hintES:"La Roja gana en casa",hintEN:"La Roja wins at home",stadium:"Estadio Santiago Bernabéu",city:"Madrid, España"},
+  {year:1968,countryES:"Italia",country:"Italy",flag:"🇮🇹",hintES:"Gli Azzurri, primera vez",hintEN:"Gli Azzurri, first time",stadium:"Estadio Olímpico",city:"Roma, Italia"},
+  {year:1972,countryES:"Alemania",country:"Germany",flag:"🇩🇪",hintES:"Das Nationalelf",hintEN:"Das Nationalelf",stadium:"Estadio Olímpico",city:"Bruselas, Bélgica"},
+  {year:1976,countryES:"Checoslovaquia",country:"Czechoslovakia",flag:"🇨🇿",hintES:"Penalti Panenka mítico",hintEN:"Home of the Panenka penalty",stadium:"Estadio Crvena zvezda",city:"Belgrado, Yugoslavia"},
+  {year:1980,countryES:"Alemania",country:"Germany",flag:"🇩🇪",hintES:"Segunda Eurocopa alemana",hintEN:"Germany's second Euro",stadium:"Estadio Olímpico",city:"Roma, Italia"},
+  {year:1984,countryES:"Francia",country:"France",flag:"🇫🇷",hintES:"Platini fue el MVP absoluto",hintEN:"Platini was the undisputed MVP",stadium:"Parque de los Príncipes",city:"París, Francia"},
+  {year:1988,countryES:"Países Bajos",country:"Netherlands",flag:"🇳🇱",hintES:"Van Basten gol imposible",hintEN:"Van Basten's impossible volley",stadium:"Olympiastadion",city:"Múnich, Alemania"},
+  {year:1992,countryES:"Dinamarca",country:"Denmark",flag:"🇩🇰",hintES:"Clasificados de rebote, campeones",hintEN:"Replacements who became champions",stadium:"Ullevi",city:"Gotemburgo, Suecia"},
+  {year:1996,countryES:"Alemania",country:"Germany",flag:"🇩🇪",hintES:"Gol de oro de Bierhoff",hintEN:"Bierhoff's golden goal",stadium:"Wembley",city:"Londres, Reino Unido"},
+  {year:2000,countryES:"Francia",country:"France",flag:"🇫🇷",hintES:"Zidane y el gol de oro",hintEN:"Zidane and the golden goal",stadium:"Estadio Rey Balduino",city:"Bruselas, Bélgica"},
+  {year:2004,countryES:"Grecia",country:"Greece",flag:"🇬🇷",hintES:"La mayor sorpresa de la historia",hintEN:"The biggest upset in Euro history",stadium:"Estadio da Luz",city:"Lisboa, Portugal"},
+  {year:2008,countryES:"España",country:"Spain",flag:"🇪🇸",hintES:"Inicio de la era dorada",hintEN:"Start of the golden era",stadium:"Ernst-Happel-Stadion",city:"Viena, Austria"},
+  {year:2012,countryES:"España",country:"Spain",flag:"🇪🇸",hintES:"4-0 a Italia en la final",hintEN:"4-0 vs Italy in the final",stadium:"Estadio Olímpico de Kiev",city:"Kiev, Ucrania"},
+  {year:2016,countryES:"Portugal",country:"Portugal",flag:"🇵🇹",hintES:"Cristiano lesionado pero campeones",hintEN:"Ronaldo injured but champions",stadium:"Stade de France",city:"Saint-Denis, Francia"},
+  {year:2021,countryES:"Italia",country:"Italy",flag:"🇮🇹",hintES:"Penaltis vs Inglaterra en Wembley",hintEN:"Penalties vs England at Wembley",stadium:"Wembley",city:"Londres, Reino Unido"},
+  {year:2024,countryES:"España",country:"Spain",flag:"🇪🇸",hintES:"Cuarta Eurocopa española",hintEN:"Spain's fourth Euro title",stadium:"Olympiastadion",city:"Berlín, Alemania"},
+];
+const UNIQUE_ES=[...new Set(WINNERS.map(w=>w.countryES))];
+const UNIQUE_EN=[...new Set(WINNERS.map(w=>w.country))];
+const getUnique=()=>lang==='en'?UNIQUE_EN:UNIQUE_ES;
+const getCountry=w=>lang==='en'?w.country:w.countryES;
+const getHint=w=>lang==='en'?w.hintEN:w.hintES;
+
+const QUIZ_Q=[
+  {q:"¿Cuántas Eurocopas ha ganado España?",qEN:"How many Euros has Spain won?",opts:["2","3","4","5"],ans:2,fact:"España ganó en 1964, 2008, 2012 y 2024.",factEN:"Spain won in 1964, 2008, 2012 and 2024."},
+  {q:"¿Qué país ganó la primera Eurocopa en 1960?",qEN:"Which country won the first Euro in 1960?",opts:["Francia/France","URSS/USSR","Checoslovaquia/Czechoslovakia","Yugoslavia"],ans:1,fact:"La URSS venció a Yugoslavia 2-1 en París.",factEN:"USSR beat Yugoslavia 2-1 in Paris."},
+  {q:"¿Quién marcó el penalti 'Panenka' en 1976?",qEN:"Who scored the 'Panenka' penalty in 1976?",opts:["Zidane","Panenka","Müller","Platini"],ans:1,fact:"Antonín Panenka inventó ese chip que lleva su nombre.",factEN:"Antonín Panenka invented the chip penalty named after him."},
+  {q:"¿Quién fue el máximo goleador de la Euro 1984?",qEN:"Who was the top scorer of Euro 1984?",opts:["Zidane","Ronaldo","Platini","Van Basten"],ans:2,fact:"Michel Platini marcó 9 goles en un solo torneo.",factEN:"Michel Platini scored 9 goals in a single tournament."},
+  {q:"¿Qué selección ganó la Euro 1992 sin clasificarse originalmente?",qEN:"Which team won Euro 1992 without originally qualifying?",opts:["Dinamarca/Denmark","Noruega/Norway","Albania","Suecia/Sweden"],ans:0,fact:"Dinamarca reemplazó a Yugoslavia por la guerra.",factEN:"Denmark replaced Yugoslavia due to the war."},
+  {q:"¿Cuál fue el resultado de la final de la Euro 2012?",qEN:"What was the score of the Euro 2012 final?",opts:["España 2-0 Italia","España 4-0 Italia","España 3-1 Italia","España 1-0 Italia"],ans:1,fact:"España aplastó a Italia 4-0.",factEN:"Spain crushed Italy 4-0."},
+  {q:"¿Quién ganó el MVP de la Euro 2024?",qEN:"Who won Player of the Tournament at Euro 2024?",opts:["Mbappé","Rodri","Bellingham","Yamal"],ans:1,fact:"Rodri fue MVP y ganó el Balón de Oro ese año.",factEN:"Rodri was MVP and won the Ballon d'Or that year."},
+  {q:"¿Qué selección fue la mayor sorpresa en la Euro 2004?",qEN:"Which team was the biggest surprise at Euro 2004?",opts:["Islandia/Iceland","Grecia/Greece","Albania","Gales/Wales"],ans:1,fact:"Grecia, con cuotas de 80/1, ganó el torneo.",factEN:"Greece, at 80/1 odds, won the tournament."},
+  {q:"¿En qué año ganó Portugal su primera Eurocopa?",qEN:"In which year did Portugal win their first Euro?",opts:["2012","2016","2020","2024"],ans:1,fact:"Portugal ganó en 2016 con Cristiano lesionado en la final.",factEN:"Portugal won in 2016 with Ronaldo injured in the final."},
+  {q:"¿Quién marcó el gol dorado de Alemania en 1996?",qEN:"Who scored Germany's golden goal in 1996?",opts:["Klinsmann","Bierhoff","Müller","Ballack"],ans:1,fact:"Oliver Bierhoff anotó el primer gol de oro de la historia en una final.",factEN:"Oliver Bierhoff scored the first ever golden goal in a final."},
+  {q:"¿Qué país ha ganado más Eurocopas hasta 2024?",qEN:"Which country has won the most Euros up to 2024?",opts:["Alemania/Germany","Francia/France","España/Spain","Italia/Italy"],ans:2,fact:"España lidera con 4 títulos.",factEN:"Spain leads with 4 titles."},
+  {q:"¿Quién fue la gran revelación de la Euro 2024 con 16 años?",qEN:"Who was the breakout star of Euro 2024 at 16?",opts:["Bellingham","Yamal","Pedri","Camavinga"],ans:1,fact:"Lamine Yamal marcó un golazo el día antes de cumplir 17 años.",factEN:"Lamine Yamal scored a stunning goal the day before turning 17."},
+  {q:"¿Quién fue MVP de la Euro 2008?",qEN:"Who was MVP of Euro 2008?",opts:["Xavi","Iniesta","David Villa","Torres"],ans:0,fact:"Xavi Hernández fue elegido el mejor jugador.",factEN:"Xavi Hernández was named best player."},
+  {q:"¿Quién marcó el gol de la final de 2008?",qEN:"Who scored the only goal of the 2008 final?",opts:["Xavi","Iniesta","Torres","Villa"],ans:2,fact:"Fernando Torres marcó el único gol ante Alemania.",factEN:"Fernando Torres scored the only goal against Germany."},
+  {q:"¿Cuántos goles marcó el máximo goleador de la Euro 2024?",qEN:"How many goals did the top scorer of Euro 2024 score?",opts:["4","5","6","3"],ans:1,fact:"Cody Gakpo marcó 5 goles para Países Bajos.",factEN:"Cody Gakpo scored 5 goals for the Netherlands."},
+];
+
+// SNIPER DATA
+const SNIPER_DATA=[
+  {year:1960,cluesES:["La final se jugó en París","La URSS levantó el primer trofeo de la historia","El torneo solo contó con 4 equipos"],cluesEN:["The final was played in Paris","USSR lifted the first ever trophy","Only 4 teams participated"]},
+  {year:1976,cluesES:["Se inventó el penalti a lo Panenka","La final fue Checoslovaquia vs Alemania Occidental","Se decidió en la tanda de penaltis"],cluesEN:["The Panenka penalty was invented here","The final was Czechoslovakia vs West Germany","It was decided on penalties"]},
+  {year:1984,cluesES:["Platini marcó 9 goles en el torneo","La anfitriona ganó el torneo","Francia fue campeona por primera vez"],cluesEN:["Platini scored 9 goals in the tournament","The host nation won","France became champions for the first time"]},
+  {year:1992,cluesES:["El campeón no se había clasificado","Dinamarca reemplazó a Yugoslavia","La final fue contra Alemania"],cluesEN:["The champion hadn't originally qualified","Denmark replaced Yugoslavia","The final was against Germany"]},
+  {year:1996,cluesES:["Se usó la regla del gol de oro por primera vez","La final fue en Wembley","Alemania ganó su tercer título"],cluesEN:["The golden goal rule was used for the first time","The final was at Wembley","Germany won their third title"]},
+  {year:2004,cluesES:["Fue la mayor sorpresa de la historia","Grecia ganó con cuotas de 80/1","La final fue en Lisboa"],cluesEN:["It was the biggest upset in history","Greece won at odds of 80/1","The final was in Lisbon"]},
+  {year:2016,cluesES:["El campeón ganó pese a que su estrella se lesionó en la final","Portugal ganó su primer título","La final fue en el Stade de France"],cluesEN:["The champion won despite their star getting injured in the final","Portugal won their first title","The final was at the Stade de France"]},
+  {year:2021,cluesES:["La final fue en Wembley con 67.000 aficionados locales","Italia ganó en penaltis","El torneo se jugó en múltiples países por el COVID"],cluesEN:["The final was at Wembley with 67,000 local fans","Italy won on penalties","The tournament was played across multiple countries due to COVID"]},
+];
+
+// WHO ARE YOU DATA
+const WHO_DATA=[
+  {nameES:"Michel Platini",nameEN:"Michel Platini",cluesES:["Francés, jugué en la Juventus","Marqué 9 goles en una sola Eurocopa","Gané el Balón de Oro tres veces seguidas"],cluesEN:["French, I played for Juventus","I scored 9 goals in a single European Championship","I won the Ballon d'Or three times in a row"],opts:["Platini","Zidane","Cantona","Papin"]},
+  {nameES:"Marco van Basten",nameEN:"Marco van Basten",cluesES:["Holandés, jugué en el AC Milan","Mi volea en la final de 1988 es un gol histórico","Gané el Balón de Oro tres veces"],cluesEN:["Dutch, I played for AC Milan","My volley in the 1988 final is a historic goal","I won the Ballon d'Or three times"],opts:["Van Basten","Gullit","Rijkaard","Koeman"]},
+  {nameES:"Antonín Panenka",nameEN:"Antonín Panenka",cluesES:["Checoslovaco, inventé un tipo de penalti","Mi apellido es ahora un término futbolístico","Fui decisivo en la final de 1976"],cluesEN:["Czech, I invented a type of penalty","My surname is now a football term","I was decisive in the 1976 final"],opts:["Panenka","Nehoda","Masny","Ondrus"]},
+  {nameES:"Oliver Bierhoff",nameEN:"Oliver Bierhoff",cluesES:["Alemán, marqué el primer gol de oro de la historia","Lo hice en la final de una Eurocopa","Más tarde fui director deportivo de Alemania"],cluesEN:["German, I scored the first ever golden goal","I did it in a European Championship final","I later became Germany's sporting director"],opts:["Bierhoff","Klinsmann","Müller","Ballack"]},
+  {nameES:"Iker Casillas",nameEN:"Iker Casillas",cluesES:["Soy el portero de la era dorada española","Gané dos Eurocopas y un Mundial","Me llaman 'San Iker'"],cluesEN:["I'm the goalkeeper of Spain's golden era","I won two Euros and one World Cup","They call me 'Saint Iker'"],opts:["Casillas","Reina","De Gea","Cañizares"]},
+  {nameES:"Andrés Iniesta",nameEN:"Andrés Iniesta",cluesES:["Jugué toda mi carrera en el Barcelona","Fui MVP de la final de la Euro 2012","También marqué el gol del Mundial 2010"],cluesEN:["I played my whole career at Barcelona","I was MVP of the Euro 2012 final","I also scored the 2010 World Cup winning goal"],opts:["Iniesta","Xavi","Silva","Fabregas"]},
+  {nameES:"Lamine Yamal",nameEN:"Lamine Yamal",cluesES:["Soy el jugador más joven en marcar en una Eurocopa","Fui la gran estrella de la Euro 2024","Juego en el FC Barcelona"],cluesEN:["I'm the youngest player to score at a Euro","I was the star of Euro 2024","I play for FC Barcelona"],opts:["Yamal","Pedri","Gavi","Ferran Torres"]},
+  {nameES:"Cristiano Ronaldo",nameEN:"Cristiano Ronaldo",cluesES:["Soy el máximo goleador de la historia de las Eurocopas","Gané la Euro 2016 lesionado","He ganado el Balón de Oro cinco veces"],cluesEN:["I'm the all-time top scorer at the Euros","I won Euro 2016 while injured","I've won the Ballon d'Or five times"],opts:["Cristiano Ronaldo","Figo","Rui Costa","Nani"]},
+];
+
+// SEDE DATA
+const SEDE_DATA=WINNERS.map(w=>({year:w.year,stadium:w.stadium,city:w.city,winner:w,flag:w.flag}));
+
+// BADGES
+const ALL_BADGES=[
+  {id:'first_game',icon:'🎮',nameES:'Primera partida',nameEN:'First game',descES:'Juega tu primera partida',descEN:'Play your first game'},
+  {id:'perfect_nombrar',icon:'🌍',nameES:'Geografía perfecta',nameEN:'Perfect geography',descES:'Encuentra todos los países sin pistas',descEN:'Find all countries without hints'},
+  {id:'streak_5',icon:'🔥',nameES:'En racha',nameEN:'On fire',descES:'Consigue una racha de 5 en modo Por Año',descEN:'Get a streak of 5 in Year mode'},
+  {id:'quiz_perfect',icon:'🧠',nameES:'Cerebro de fútbol',nameEN:'Football brain',descES:'Completa el Quiz sin fallar ninguna',descEN:'Complete the Quiz without any mistakes'},
+  {id:'sniper_ace',icon:'🎯',nameES:'Francotirador',nameEN:'Sniper ace',descES:'Adivina el año exacto en Sniper con la primera pista',descEN:'Guess the exact year in Sniper with the first clue'},
+  {id:'daily_3',icon:'📆',nameES:'Habitual',nameEN:'Regular',descES:'Completa el reto diario 3 días seguidos',descEN:'Complete the daily challenge 3 days in a row'},
+  {id:'who_perfect',icon:'📸',nameES:'Fan de leyendas',nameEN:'Legends fan',descES:'Adivina 5 jugadores seguidos en ¿Quién soy?',descEN:'Guess 5 players in a row in Who am I?'},
+  {id:'top3',icon:'🏆',nameES:'Top 3',nameEN:'Top 3',descES:'Llega al top 3 de la clasificación global',descEN:'Reach the top 3 of the global leaderboard'},
+  {id:'score_2000',icon:'💎',nameES:'2000 puntos',nameEN:'2000 points',descES:'Consigue 2000 puntos en una partida',descEN:'Score 2000 points in a single game'},
+  {id:'all_modes',icon:'🎪',nameES:'Explorador',nameEN:'Explorer',descES:'Juega todos los modos al menos una vez',descEN:'Play all modes at least once'},
+];
+
+// ==================== AUTH ====================
+let currentUser=null,currentUserId=null,isGuest=false;
+let userBadges=[],modesPlayed=new Set(),dailyStreak=0;
+
+function switchTab(t){
+  document.querySelectorAll('.tab').forEach((el,i)=>el.classList.toggle('active',(t==='login'&&i===0)||(t==='register'&&i===1)));
+  document.getElementById('tabLogin').style.display=t==='login'?'block':'none';
+  document.getElementById('tabRegister').style.display=t==='register'?'block':'none';
+}
+
+async function login(){
+  const u=document.getElementById('loginUser').value.trim(),p=document.getElementById('loginPass').value;
+  if(!u||!p)return toast('Rellena todos los campos','error');
+  const btn=document.getElementById('btnLogin');btn.disabled=true;btn.textContent='...';
+  try{
+    const rows=await sbGet('users',`?username=eq.${encodeURIComponent(u)}&password=eq.${encodeURIComponent(p)}&select=id,username,total_pts,games_played`);
+    if(!rows.length){toast('Usuario o contraseña incorrectos','error');return;}
+    currentUser=rows[0].username;currentUserId=rows[0].id;isGuest=false;
+    loadUserData();
+    enterGame(rows[0].total_pts);
+  }catch(e){toast('Error de conexión','error');}
+  finally{btn.disabled=false;btn.textContent='Entrar ⚽';}
+}
+
+async function register(){
+  const u=document.getElementById('regUser').value.trim(),p=document.getElementById('regPass').value;
+  if(!u||!p)return toast('Rellena todos los campos','error');
+  if(p.length<4)return toast('Contraseña mínimo 4 caracteres','error');
+  const btn=document.getElementById('btnRegister');btn.disabled=true;btn.textContent='...';
+  try{
+    const exists=await sbGet('users',`?username=eq.${encodeURIComponent(u)}`);
+    if(exists.length){toast('Ese usuario ya existe','error');return;}
+    const rows=await sbPost('users',{username:u,password:p,total_pts:0,games_played:0});
+    if(!rows||!rows.length){toast('Error al crear cuenta','error');return;}
+    currentUser=rows[0].username;currentUserId=rows[0].id;isGuest=false;
+    toast('¡Cuenta creada!','info');
+    setTimeout(()=>enterGame(0),600);
+  }catch(e){toast('Error de conexión','error');}
+  finally{btn.disabled=false;btn.textContent='Crear cuenta 🎉';}
+}
+
+function guestLogin(){currentUser='Invitado_'+Math.floor(Math.random()*9000+1000);currentUserId=null;isGuest=true;enterGame(0);}
+
+function logout(){currentUser=null;currentUserId=null;isGuest=false;document.getElementById('userBar').style.display='none';showScreen('screenLogin');}
+
+function enterGame(pts=0){
+  document.getElementById('userBar').style.display='flex';
+  document.getElementById('barUsername').textContent=currentUser+(isGuest?' (inv.)':'');
+  document.getElementById('barScore').textContent=pts+' pts';
+  loadDailyStreak();
+  goHome();
+}
+
+function loadUserData(){
+  const key='euroquiz_badges_'+currentUser;
+  try{userBadges=JSON.parse(localStorage.getItem(key)||'[]');}catch(e){userBadges=[];}
+  const mk='euroquiz_modes_'+currentUser;
+  try{modesPlayed=new Set(JSON.parse(localStorage.getItem(mk)||'[]'));}catch(e){modesPlayed=new Set();}
+}
+
+function saveUserData(){
+  if(isGuest)return;
+  localStorage.setItem('euroquiz_badges_'+currentUser,JSON.stringify(userBadges));
+  localStorage.setItem('euroquiz_modes_'+currentUser,JSON.stringify([...modesPlayed]));
+}
+
+function loadDailyStreak(){
+  if(isGuest)return;
+  const key='euroquiz_daily_'+currentUser;
+  try{
+    const d=JSON.parse(localStorage.getItem(key)||'{}');
+    dailyStreak=d.streak||0;
+    document.getElementById('barStreak').textContent=dailyStreak>0?'🔥'+dailyStreak:'';
+  }catch(e){}
+}
+
+async function saveScore(score){
+  if(isGuest)return;
+  try{
+    await sbPost('scores',{username:currentUser,score,mode:lastMode});
+    const user=await sbGet('users',`?id=eq.${currentUserId}&select=total_pts,games_played`);
+    if(user.length){
+      const np=(user[0].total_pts||0)+score,ng=(user[0].games_played||0)+1;
+      await sbPatch('users',`?id=eq.${currentUserId}`,{total_pts:np,games_played:ng});
+      document.getElementById('barScore').textContent=np+' pts';
+    }
+  }catch(e){console.error(e);}
+}
+
+// ==================== BADGES ====================
+function checkBadges(context){
+  const newOnes=[];
+  const earn=(id)=>{if(!userBadges.includes(id)){userBadges.push(id);newOnes.push(id);saveUserData();}};
+  if(modesPlayed.size>=1) earn('first_game');
+  if(context.mode==='contrarreloj'||context.mode==='supervivencia'){if(context.completed&&context.hints===0)earn('perfect_nombrar');}
+  if(context.mode==='años'&&context.streak>=5)earn('streak_5');
+  if(context.mode==='quiz'&&context.perfect)earn('quiz_perfect');
+  if(context.mode==='sniper'&&context.firstClue)earn('sniper_ace');
+  if(context.mode==='whoareyou'&&context.whoStreak>=5)earn('who_perfect');
+  if(context.score>=2000)earn('score_2000');
+  if(modesPlayed.size>=7)earn('all_modes');
+  return newOnes;
+}
+
+function showBadgeNotification(ids){
+  ids.forEach((id,i)=>{
+    const b=ALL_BADGES.find(x=>x.id===id);
+    if(!b)return;
+    setTimeout(()=>toast(`🎖️ Logro desbloqueado: ${lang==='en'?b.nameEN:b.nameES}`,'gold'),i*1200);
+  });
+}
+
+// ==================== NAV ====================
+function showScreen(id){document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));document.getElementById(id).classList.add('active');}
+function goHome(){clearAllTimers();showScreen('screenHome');renderDailyBanner();}
+
+// ==================== GAME STATE ====================
+let gameMode=null,gameTimer=null,gameSeconds=0,gameScore=0;
+let foundCountries=[],livesLeft=3,hintsUsed=0;
+let yearIndex=0,yearShuffled=[],yearStreak=0,yearPerfect=true;
+let quizIndex=0,quizShuffled=[],quizTimer=null,quizSeconds=15,quizPerfect=true;
+let lastMode=null;
+// Sniper
+let sniperData=[],sniperIndex=0,sniperClueIndex=0,sniperPts=0,sniperFirstClue=false;
+// Who
+let whoData=[],whoIndex=0,whoTimer=null,whoSeconds=20,whoPts=0,whoStreak=0;
+// Sede
+let sedeData=[],sedeIndex=0,sedeStreak=0,sedePts=0;
+// Daily
+let dailyData=[],dailyIndex=0,dailyTimer=null,dailySeconds=20,dailyPts=0;
+
+function clearAllTimers(){clearInterval(gameTimer);clearInterval(quizTimer);clearInterval(whoTimer);clearInterval(dailyTimer);}
+
+function startMode(mode){
+  clearAllTimers();gameMode=mode;lastMode=mode;gameScore=0;hintsUsed=0;
+  if(!isGuest){modesPlayed.add(mode);saveUserData();}
+  if(mode==='contrarreloj'||mode==='supervivencia') startNombrar(mode);
+  else if(mode==='años') startYearMode();
+  else if(mode==='quiz') startQuizMode();
+  else if(mode==='sniper') startSniperMode();
+  else if(mode==='whoareyou') startWhoMode();
+  else if(mode==='sede') startSedeMode();
+  else if(mode==='daily') startDailyMode();
+}
+
+// ==================== NOMBRAR ====================
+function startNombrar(mode){
+  foundCountries=[];livesLeft=3;gameSeconds=mode==='contrarreloj'?180:999;
+  const grid=document.getElementById('countriesGrid');grid.innerHTML='';
+  getUnique().forEach(c=>{const el=document.createElement('div');el.className='country-tile';el.id='tile_'+c.replace(/[\s.]/g,'_');el.textContent='?????';grid.appendChild(el);});
+  document.getElementById('statFound').textContent='0/'+getUnique().length;
+  document.getElementById('statPts').textContent='0';document.getElementById('hintText').textContent='';
+  updateLives();updateTimerDisplay();
+  if(mode==='supervivencia') document.getElementById('statTimer').textContent='∞';
+  showScreen('screenNombrar');document.getElementById('countryInput').focus();
+  if(mode==='contrarreloj') gameTimer=setInterval(()=>{gameSeconds--;updateTimerDisplay();if(gameSeconds<=0){clearInterval(gameTimer);endGame();}},1000);
+}
+function updateTimerDisplay(){const m=Math.floor(gameSeconds/60),s=gameSeconds%60;document.getElementById('statTimer').textContent=`${m}:${s.toString().padStart(2,'0')}`;}
+function updateLives(){document.getElementById('statLives').textContent='❤️'.repeat(livesLeft)+'🖤'.repeat(3-livesLeft);}
+function checkCountry(){
+  const inp=document.getElementById('countryInput'),val=inp.value.trim();inp.value='';
+  if(!val)return;
+  const norm=s=>s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z]/g,'');
+  const al={'holanda':'países bajos','holland':'netherlands','paises bajos':'países bajos','netherlands':'netherlands','urss':'urss','ussr':'urss','union sovietica':'urss','soviet union':'urss','checoslovaquia':'checoslovaquia','czechoslovakia':'checoslovaquia','alemania':'alemania','germany':'germany','west germany':'germany','espana':'españa','spain':'spain'};
+  let nv=al[norm(val)]||norm(val);
+  const match=getUnique().find(c=>{let nc=al[norm(c)]||norm(c);return nc===nv||norm(c)===nv;});
+  if(match){
+    if(foundCountries.includes(match)){toast('¡Ya encontraste ese!','info');return;}
+    foundCountries.push(match);
+    const tile=document.getElementById('tile_'+match.replace(/[\s.]/g,'_'));
+    if(tile){tile.textContent=match;tile.classList.add('found');}
+    const pts=100+(gameMode==='contrarreloj'?Math.floor(gameSeconds/2):50);
+    gameScore+=pts;
+    document.getElementById('statFound').textContent=foundCountries.length+'/'+getUnique().length;
+    document.getElementById('statPts').textContent=gameScore;
+    toast('✅ '+match);
+    if(foundCountries.length===getUnique().length){clearInterval(gameTimer);endGame(true);}
+  } else {
+    if(gameMode==='supervivencia'){livesLeft--;updateLives();toast('❌ Incorrecto','error');if(livesLeft<=0)endGame();}
+    else toast('❌ Incorrecto','error');
+  }
+}
+function useHint(){
+  const rem=getUnique().filter(c=>!foundCountries.includes(c));if(!rem.length)return;
+  const pick=rem[Math.floor(Math.random()*rem.length)];
+  const data=WINNERS.find(w=>getCountry(w)===pick);
+  document.getElementById('hintText').textContent='💡 '+(data?getHint(data):'...');
+  gameScore=Math.max(0,gameScore-50);document.getElementById('statPts').textContent=gameScore;hintsUsed++;
+}
+
+// ==================== AÑO ====================
+function startYearMode(){
+  yearShuffled=[...WINNERS].sort(()=>Math.random()-.5);yearIndex=0;yearStreak=0;gameScore=0;yearPerfect=true;
+  document.getElementById('yearPts').textContent='0';document.getElementById('yearStreak').textContent='0';
+  showNextYear();showScreen('screenAños');document.getElementById('yearInput').focus();
+}
+function showNextYear(){
+  if(yearIndex>=yearShuffled.length){endGame(true);return;}
+  const w=yearShuffled[yearIndex];
+  document.getElementById('yearDisplay').textContent=w.year;
+  document.getElementById('yearQ').textContent=(yearIndex+1)+'/'+yearShuffled.length;
+  document.getElementById('yearFeedback').textContent='';
+  document.getElementById('yearInput').value='';document.getElementById('yearInput').focus();
+}
+function checkYear(){
+  const val=document.getElementById('yearInput').value.trim();
+  const w=yearShuffled[yearIndex];
+  const norm=s=>s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z]/g,'');
+  const al={'espana':'españa','spain':'españa','germany':'alemania','west germany':'alemania','urss':'urss','ussr':'urss','soviet union':'urss','checoslovaquia':'checoslovaquia','czechoslovakia':'checoslovaquia','netherlands':'países bajos','holanda':'países bajos','paises bajos':'países bajos'};
+  let nv=al[norm(val)]||norm(val),na=al[norm(getCountry(w))]||norm(getCountry(w));
+  if(nv===na||norm(val)===norm(getCountry(w))){
+    yearStreak++;const pts=150+yearStreak*20;gameScore+=pts;
+    document.getElementById('yearFeedback').innerHTML=`<span style="color:var(--green)">✅ ¡Correcto! +${pts} pts 🔥 Racha: ${yearStreak}</span>`;
+    document.getElementById('yearPts').textContent=gameScore;document.getElementById('yearStreak').textContent=yearStreak;
+  } else {
+    yearStreak=0;yearPerfect=false;document.getElementById('yearStreak').textContent='0';
+    document.getElementById('yearFeedback').innerHTML=`<span style="color:var(--red)">❌ Era ${w.flag} ${getCountry(w)}</span>`;
+    document.getElementById('yearInput').value='';
+  }
+  yearIndex++;setTimeout(showNextYear,1000);
+}
+
+// ==================== QUIZ ====================
+function startQuizMode(){
+  quizShuffled=[...QUIZ_Q].sort(()=>Math.random()-.5).slice(0,15);quizIndex=0;gameScore=0;quizPerfect=true;
+  document.getElementById('qPts').textContent='0';showNextQuiz();showScreen('screenQuiz');
+}
+function showNextQuiz(){
+  if(quizIndex>=quizShuffled.length){endGame(true);return;}
+  clearInterval(quizTimer);quizSeconds=15;
+  const q=quizShuffled[quizIndex];
+  document.getElementById('qNum').textContent=(quizIndex+1)+'/'+quizShuffled.length;
+  document.getElementById('qQuestion').textContent=lang==='en'?q.qEN:q.q;
+  document.getElementById('qProgress').style.width=((quizIndex+1)/quizShuffled.length*100)+'%';
+  document.getElementById('qTimer').textContent=quizSeconds;
+  const opts=document.getElementById('qOptions');opts.innerHTML='';
+  q.opts.forEach((opt,i)=>{const btn=document.createElement('div');btn.className='quiz-opt';btn.textContent=opt;btn.onclick=()=>selectQuizOpt(i,btn,q);opts.appendChild(btn);});
+  quizTimer=setInterval(()=>{quizSeconds--;document.getElementById('qTimer').textContent=quizSeconds;if(quizSeconds<=0){clearInterval(quizTimer);timeoutQuiz(q);}},1000);
+}
+function selectQuizOpt(idx,btn,q){
+  clearInterval(quizTimer);
+  document.querySelectorAll('#qOptions .quiz-opt').forEach(o=>o.classList.add('disabled'));
+  document.querySelectorAll('#qOptions .quiz-opt')[q.ans].classList.add('correct');
+  if(idx===q.ans){btn.classList.add('correct');const pts=100+quizSeconds*10;gameScore+=pts;document.getElementById('qPts').textContent=gameScore;toast(`✅ +${pts} — ${lang==='en'?q.factEN:q.fact}`,'info');}
+  else{btn.classList.add('wrong');quizPerfect=false;toast('❌ '+(lang==='en'?q.factEN:q.fact),'error');}
+  quizIndex++;setTimeout(showNextQuiz,2200);
+}
+function timeoutQuiz(q){
+  document.querySelectorAll('#qOptions .quiz-opt').forEach(o=>o.classList.add('disabled'));
+  document.querySelectorAll('#qOptions .quiz-opt')[q.ans].classList.add('correct');
+  quizPerfect=false;toast('⏱ Tiempo — '+q.opts[q.ans],'error');quizIndex++;setTimeout(showNextQuiz,2200);
+}
+
+// ==================== SNIPER ====================
+function startSniperMode(){
+  sniperData=[...SNIPER_DATA].sort(()=>Math.random()-.5).slice(0,8);
+  sniperIndex=0;sniperPts=0;sniperFirstClue=true;
+  showSniperRound();showScreen('screenSniper');
+}
+function showSniperRound(){
+  if(sniperIndex>=sniperData.length){endGame(true);return;}
+  sniperClueIndex=0;sniperFirstClue=true;
+  document.getElementById('sniperQ').textContent=(sniperIndex+1)+'/'+sniperData.length;
+  document.getElementById('sniperPts').textContent=sniperPts;
+  document.getElementById('sniperClues').textContent='0/3';
+  document.getElementById('sniperFeedback').textContent='';
+  document.getElementById('sniperInput').value='';
+  document.getElementById('btnNextClue').style.display='';
+  const list=document.getElementById('cluesList');list.innerHTML='';
+  const d=sniperData[sniperIndex];
+  const clues=lang==='en'?d.cluesEN:d.cluesES;
+  clues.forEach((c,i)=>{
+    const el=document.createElement('div');el.className='clue-item';
+    el.innerHTML=`<span class="clue-num">#${i+1}</span>${c}`;
+    el.id='clue_'+i;list.appendChild(el);
+  });
+  setTimeout(()=>{document.getElementById('clue_0').classList.add('show');document.getElementById('sniperClues').textContent='1/3';},300);
+}
+function showNextClue(){
+  sniperClueIndex++;sniperFirstClue=false;
+  if(sniperClueIndex>=2){document.getElementById('btnNextClue').style.display='none';}
+  const el=document.getElementById('clue_'+(sniperClueIndex+1));
+  if(el){el.classList.add('show');document.getElementById('sniperClues').textContent=(sniperClueIndex+2)+'/3';}
+  gameScore=Math.max(0,gameScore-100);sniperPts=gameScore;document.getElementById('sniperPts').textContent=sniperPts;
+}
+function checkSniper(){
+  const val=parseInt(document.getElementById('sniperInput').value);
+  const d=sniperData[sniperIndex];
+  if(!val)return;
+  const diff=Math.abs(val-d.year);
+  if(diff===0){
+    const pts=sniperFirstClue?500:sniperClueIndex===0?400:200;
+    gameScore+=pts;sniperPts=gameScore;
+    document.getElementById('sniperPts').textContent=sniperPts;
+    document.getElementById('sniperFeedback').innerHTML=`<span style="color:var(--green)">🎯 ¡Exacto! +${pts} pts</span>`;
+    confetti();
+    sniperIndex++;setTimeout(showSniperRound,1200);
+  } else if(diff<=4){
+    document.getElementById('sniperFeedback').innerHTML=`<span style="color:var(--gold)">🔥 ¡Muy cerca! Era ${d.year}</span>`;
+    gameScore+=50;sniperIndex++;setTimeout(showSniperRound,1200);
+  } else {
+    document.getElementById('sniperFeedback').innerHTML=`<span style="color:var(--red)">❌ Era ${d.year}</span>`;
+    sniperIndex++;setTimeout(showSniperRound,1200);
+  }
+}
+
+// ==================== WHO ARE YOU ====================
+function startWhoMode(){
+  whoData=[...WHO_DATA].sort(()=>Math.random()-.5);whoIndex=0;whoPts=0;whoStreak=0;
+  document.getElementById('whoPts').textContent='0';
+  showWhoRound();showScreen('screenWhoAreYou');
+}
+function showWhoRound(){
+  if(whoIndex>=whoData.length){endGame(true);return;}
+  clearInterval(whoTimer);whoSeconds=20;
+  const p=whoData[whoIndex];
+  document.getElementById('whoQ').textContent=(whoIndex+1)+'/'+whoData.length;
+  document.getElementById('whoTimer').textContent=whoSeconds;
+  const clues=document.getElementById('playerClues');clues.innerHTML='';
+  const cl=lang==='en'?p.cluesEN:p.cluesES;
+  cl.forEach((c,i)=>{
+    const el=document.createElement('div');el.className='player-clue';el.textContent=c;clues.appendChild(el);
+    setTimeout(()=>el.classList.add('show'),i*600);
+  });
+  const opts=document.getElementById('whoOptions');opts.innerHTML='';
+  const shuffled=[...p.opts].sort(()=>Math.random()-.5);
+  shuffled.forEach(opt=>{
+    const btn=document.createElement('div');btn.className='quiz-opt';btn.textContent=opt;
+    const correctName=lang==='en'?p.nameEN:p.nameES;
+    btn.onclick=()=>selectWhoOpt(opt,correctName,btn,opts);
+    opts.appendChild(btn);
+  });
+  whoTimer=setInterval(()=>{whoSeconds--;document.getElementById('whoTimer').textContent=whoSeconds;if(whoSeconds<=0){clearInterval(whoTimer);timeoutWho(p);}},1000);
+}
+function selectWhoOpt(val,correct,btn,opts){
+  clearInterval(whoTimer);
+  opts.querySelectorAll('.quiz-opt').forEach(o=>{o.classList.add('disabled');if(o.textContent===correct)o.classList.add('correct');});
+  if(val===correct){btn.classList.add('correct');whoStreak++;const pts=150+whoSeconds*8;whoPts+=pts;gameScore=whoPts;document.getElementById('whoPts').textContent=whoPts;toast(`✅ +${pts} pts`);}
+  else{btn.classList.add('wrong');whoStreak=0;toast('❌ Era '+correct,'error');}
+  whoIndex++;setTimeout(showWhoRound,1600);
+}
+function timeoutWho(p){
+  const correct=lang==='en'?p.nameEN:p.nameES;
+  document.getElementById('whoOptions').querySelectorAll('.quiz-opt').forEach(o=>{o.classList.add('disabled');if(o.textContent===correct)o.classList.add('correct');});
+  whoStreak=0;toast('⏱ Era '+correct,'error');whoIndex++;setTimeout(showWhoRound,1600);
+}
+
+// ==================== SEDE ====================
+function startSedeMode(){
+  sedeData=[...SEDE_DATA].sort(()=>Math.random()-.5).slice(0,10);sedeIndex=0;sedeStreak=0;sedePts=0;
+  showSedeRound();showScreen('screenSede');
+}
+function showSedeRound(){
+  if(sedeIndex>=sedeData.length){endGame(true);return;}
+  const s=sedeData[sedeIndex];
+  document.getElementById('sedeQ').textContent=(sedeIndex+1)+'/'+sedeData.length;
+  document.getElementById('sedeStreak').textContent=sedeStreak;
+  document.getElementById('stadiumDisplay').textContent=s.stadium;
+  document.getElementById('countryDisplay').textContent=s.city+' · '+s.year;
+  const opts=document.getElementById('sedeOptions');opts.innerHTML='';
+  const wrong=WINNERS.filter(w=>w.year!==s.year).sort(()=>Math.random()-.5).slice(0,3).map(w=>getCountry(w));
+  const all=[getCountry(s.winner),...wrong].sort(()=>Math.random()-.5);
+  all.forEach(opt=>{
+    const btn=document.createElement('div');btn.className='quiz-opt';btn.textContent=opt;
+    btn.onclick=()=>selectSedeOpt(opt,getCountry(s.winner),btn);opts.appendChild(btn);
+  });
+}
+function selectSedeOpt(val,correct,btn){
+  document.getElementById('sedeOptions').querySelectorAll('.quiz-opt').forEach(o=>{o.classList.add('disabled');if(o.textContent===correct)o.classList.add('correct');});
+  if(val===correct){btn.classList.add('correct');sedeStreak++;const pts=120+sedeStreak*30;sedePts+=pts;gameScore=sedePts;document.getElementById('sedePts').textContent=sedePts;document.getElementById('sedeStreak').textContent=sedeStreak;toast(`✅ ${correct} +${pts}`);}
+  else{btn.classList.add('wrong');sedeStreak=0;document.getElementById('sedeStreak').textContent=0;toast('❌ Era '+correct,'error');}
+  sedeIndex++;setTimeout(showSedeRound,1400);
+}
+
+// ==================== DAILY ====================
+function getDailyQuestions(){
+  const today=new Date().toDateString();
+  const seed=today.split('').reduce((a,c)=>a+c.charCodeAt(0),0);
+  const shuffled=[...QUIZ_Q];
+  for(let i=shuffled.length-1;i>0;i--){const j=(seed*i)%i;[shuffled[i],shuffled[j]]=[shuffled[j],shuffled[i]];}
+  return shuffled.slice(0,5);
+}
+function renderDailyBanner(){
+  const today=new Date().toDateString();
+  const done=localStorage.getItem('euroquiz_daily_done_'+currentUser)===today;
+  const banner=document.getElementById('dailyBannerHome');
+  if(done){banner.innerHTML=`<div class="daily-banner" style="margin-bottom:16px"><div class="daily-icon">✅</div><div class="daily-title">Reto completado hoy</div><div class="daily-sub">Vuelve mañana para un nuevo reto 🔥${dailyStreak}</div></div>`;}
+  else{banner.innerHTML=`<div class="daily-banner" style="margin-bottom:16px;cursor:pointer" onclick="startMode('daily')"><div class="daily-icon">📆</div><div class="daily-title">¡Reto de hoy disponible!</div><div class="daily-sub">5 preguntas especiales · Racha: 🔥${dailyStreak}</div></div>`;}
+}
+function startDailyMode(){
+  const today=new Date().toDateString();
+  if(!isGuest&&localStorage.getItem('euroquiz_daily_done_'+currentUser)===today){toast('Ya completaste el reto de hoy. ¡Vuelve mañana!','info');return;}
+  dailyData=getDailyQuestions();dailyIndex=0;dailyPts=0;gameScore=0;
+  document.getElementById('dailyPts').textContent='0';
+  document.getElementById('dailyTitle').textContent=lang==='en'?'Daily Challenge':'Reto del Día';
+  document.getElementById('dailySub').textContent=new Date().toLocaleDateString(lang==='en'?'en-GB':'es-ES',{weekday:'long',day:'numeric',month:'long'});
+  showDailyQuestion();showScreen('screenDaily');
+}
+function showDailyQuestion(){
+  if(dailyIndex>=dailyData.length){
+    if(!isGuest){
+      const today=new Date().toDateString();
+      localStorage.setItem('euroquiz_daily_done_'+currentUser,today);
+      const key='euroquiz_daily_'+currentUser;
+      try{const d=JSON.parse(localStorage.getItem(key)||'{}');const last=d.lastDate;const streak=last===new Date(Date.now()-86400000).toDateString()?d.streak+1:1;localStorage.setItem(key,JSON.stringify({streak,lastDate:today}));dailyStreak=streak;document.getElementById('barStreak').textContent='🔥'+streak;}catch(e){}
+    }
+    endGame(true);return;
+  }
+  clearInterval(dailyTimer);dailySeconds=20;
+  const q=dailyData[dailyIndex];
+  document.getElementById('dailyQ').textContent=(dailyIndex+1)+'/5';
+  document.getElementById('dailyQuestion').textContent=lang==='en'?q.qEN:q.q;
+  document.getElementById('dailyProgress').style.width=((dailyIndex+1)/5*100)+'%';
+  document.getElementById('dailyTimer').textContent=dailySeconds;
+  const opts=document.getElementById('dailyOptions');opts.innerHTML='';
+  q.opts.forEach((opt,i)=>{const btn=document.createElement('div');btn.className='quiz-opt';btn.textContent=opt;btn.onclick=()=>selectDailyOpt(i,btn,q);opts.appendChild(btn);});
+  dailyTimer=setInterval(()=>{dailySeconds--;document.getElementById('dailyTimer').textContent=dailySeconds;if(dailySeconds<=0){clearInterval(dailyTimer);timeoutDaily(q);}},1000);
+}
+function selectDailyOpt(idx,btn,q){
+  clearInterval(dailyTimer);
+  document.querySelectorAll('#dailyOptions .quiz-opt').forEach(o=>o.classList.add('disabled'));
+  document.querySelectorAll('#dailyOptions .quiz-opt')[q.ans].classList.add('correct');
+  if(idx===q.ans){btn.classList.add('correct');const pts=150+dailySeconds*12;dailyPts+=pts;gameScore=dailyPts;document.getElementById('dailyPts').textContent=dailyPts;toast(`✅ +${pts}`);}
+  else{btn.classList.add('wrong');toast('❌ '+(lang==='en'?q.factEN:q.fact),'error');}
+  dailyIndex++;setTimeout(showDailyQuestion,2000);
+}
+function timeoutDaily(q){
+  document.querySelectorAll('#dailyOptions .quiz-opt').forEach(o=>o.classList.add('disabled'));
+  document.querySelectorAll('#dailyOptions .quiz-opt')[q.ans].classList.add('correct');
+  toast('⏱ '+q.opts[q.ans],'error');dailyIndex++;setTimeout(showDailyQuestion,2000);
+}
+
+// ==================== END GAME ====================
+async function endGame(completed=false){
+  clearAllTimers();
+  await saveScore(gameScore);
+  const ctx={mode:lastMode,score:gameScore,completed,hints:hintsUsed,streak:yearStreak,perfect:quizPerfect,firstClue:sniperFirstClue,whoStreak};
+  const newBadges=checkBadges(ctx);
+  const emoji=gameScore>1500?'🏆':gameScore>800?'🥈':'🥉';
+  let title=completed?'¡Completado!':'Juego terminado';
+  if(lastMode==='supervivencia'&&livesLeft===0)title='¡Sin vidas!';
+  document.getElementById('resultEmoji').textContent=emoji;
+  document.getElementById('resultTitle').textContent=title;
+  document.getElementById('resultScore').textContent='🏅 Puntuación: '+gameScore+' pts';
+  let details='';
+  if(lastMode==='contrarreloj'||lastMode==='supervivencia'){
+    details=`<p style="margin-bottom:8px">Países encontrados: <strong>${foundCountries.length}/${getUnique().length}</strong></p><p>Pistas usadas: <strong>${hintsUsed}</strong></p>`;
+    if(!completed){details+='<p style="margin-top:10px;color:var(--muted);font-size:.85rem">Faltaban:</p>';getUnique().filter(c=>!foundCountries.includes(c)).forEach(c=>{const d=WINNERS.find(w=>getCountry(w)===c);details+=`<span style="margin-right:8px">${d?d.flag:''} ${c}</span>`;});}
+  } else if(lastMode==='años'){details=`<p>Racha máxima: <strong>${yearStreak}</strong></p>`;}
+  else if(lastMode==='quiz'){details=`<p>${quizPerfect?'🌟 ¡Sin fallos!':'Quiz completado'}</p>`;}
+  else if(lastMode==='sniper'){details=`<p>🎯 Rondas: ${sniperIndex}/${sniperData.length}</p>`;}
+  else if(lastMode==='whoareyou'){details=`<p>📸 Racha máxima: ${whoStreak}</p>`;}
+  else if(lastMode==='sede'){details=`<p>🏟️ Sedes: ${sedeIndex}/${sedeData.length}</p>`;}
+  else if(lastMode==='daily'){details=`<p>📆 Racha diaria: 🔥${dailyStreak}</p>`;}
+  if(isGuest)details+='<p style="margin-top:12px;color:var(--gold)">⚠️ Crea una cuenta para guardar tu puntuación</p>';
+  document.getElementById('resultDetails').innerHTML=details;
+  if(newBadges.length>0){
+    let html='<p style="color:var(--gold);font-weight:700;margin-bottom:8px">🎖️ ¡Nuevos logros!</p>';
+    newBadges.forEach(id=>{const b=ALL_BADGES.find(x=>x.id===id);if(b)html+=`<span style="background:var(--card2);border:1px solid var(--gold);border-radius:8px;padding:6px 12px;margin:4px;display:inline-block">${b.icon} ${lang==='en'?b.nameEN:b.nameES}</span>`;});
+    document.getElementById('newBadgesArea').innerHTML=html;
+    showBadgeNotification(newBadges);
+    if(gameScore>=2000)confetti();
+  } else {document.getElementById('newBadgesArea').innerHTML='';}
+  if(completed&&gameScore>500)confetti();
+  showScreen('screenResult');
+}
+
+function playAgain(){startMode(lastMode);}
+
+// ==================== LEADERBOARD ====================
+async function showLeaderboard(){
+  showScreen('screenLeaderboard');
+  const c=document.getElementById('lbContent');
+  c.innerHTML='<h3>🏅 Top 20 puntuaciones</h3><div class="loading"><div class="spinner"></div> Cargando...</div>';
+  try{
+    const rows=await sbGet('scores','?order=score.desc&limit=20&select=username,score,mode,created_at');
+    c.innerHTML='<h3>🏅 Top 20 puntuaciones</h3>';
+    if(!rows.length){c.innerHTML+='<p style="color:var(--muted);text-align:center">Aún no hay puntuaciones</p>';return;}
+    const me={contrarreloj:'⚡',supervivencia:'❤️','años':'📅',quiz:'🃏',sniper:'🎯',whoareyou:'📸',sede:'🏟️',daily:'📆'};
+    rows.forEach((s,i)=>{
+      const medal=i===0?'🥇':i===1?'🥈':i===2?'🥉':'';
+      const d=new Date(s.created_at).toLocaleDateString('es');
+      c.innerHTML+=`<div class="lb-row"><div class="lb-rank">${medal||'#'+(i+1)}</div><div><div class="lb-name">${s.username}</div><div class="lb-mode">${me[s.mode]||'🎮'} ${s.mode} · ${d}</div></div><div class="lb-score">${s.score} pts</div></div>`;
+    });
+  }catch(e){c.innerHTML+='<p style="color:var(--red)">Error al cargar</p>';}
+}
+
+// ==================== STATS ====================
+async function showStats(){
+  showScreen('screenStats');
+  const c=document.getElementById('statsContent');
+  if(isGuest){c.innerHTML='<p style="text-align:center;color:var(--muted)">Crea una cuenta para ver tus estadísticas 📊</p>';return;}
+  c.innerHTML='<div class="loading"><div class="spinner"></div> Cargando...</div>';
+  try{
+    const [uR,sR]=await Promise.all([sbGet('users',`?id=eq.${currentUserId}&select=total_pts,games_played`),sbGet('scores',`?username=eq.${encodeURIComponent(currentUser)}&order=score.desc&limit=5`)]);
+    const u=uR[0]||{total_pts:0,games_played:0};const best=sR.length?sR[0].score:0;
+    const all=await sbGet('scores','?order=score.desc&select=username');
+    const rank=all.findIndex(s=>s.username===currentUser)+1;
+    const me={contrarreloj:'⚡',supervivencia:'❤️','años':'📅',quiz:'🃏',sniper:'🎯',whoareyou:'📸',sede:'🏟️',daily:'📆'};
+    c.innerHTML=`
+      <h3>👤 ${currentUser} 🔥${dailyStreak}</h3>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px">
+        <div style="background:var(--card2);padding:14px;border-radius:10px;text-align:center"><div style="font-size:1.6rem;font-weight:900;color:var(--gold)">${u.total_pts}</div><div style="color:var(--muted);font-size:.75rem">PUNTOS TOTALES</div></div>
+        <div style="background:var(--card2);padding:14px;border-radius:10px;text-align:center"><div style="font-size:1.6rem;font-weight:900;color:var(--blue)">${u.games_played}</div><div style="color:var(--muted);font-size:.75rem">PARTIDAS</div></div>
+        <div style="background:var(--card2);padding:14px;border-radius:10px;text-align:center"><div style="font-size:1.6rem;font-weight:900;color:var(--green)">${best}</div><div style="color:var(--muted);font-size:.75rem">MEJOR PUNTUACIÓN</div></div>
+        <div style="background:var(--card2);padding:14px;border-radius:10px;text-align:center"><div style="font-size:1.6rem;font-weight:900;color:var(--accent)">#${rank||'—'}</div><div style="color:var(--muted);font-size:.75rem">RANKING GLOBAL</div></div>
+      </div>
+      <h3>Últimas partidas</h3>
+      ${sR.map(s=>`<div style="display:flex;justify-content:space-between;padding:8px;background:var(--card2);border-radius:8px;margin-bottom:6px"><span>${me[s.mode]||'🎮'} ${s.mode}</span><span style="color:var(--gold)">${s.score} pts</span><span style="color:var(--muted);font-size:.8rem">${new Date(s.created_at).toLocaleDateString('es')}</span></div>`).join('')||'<p style="color:var(--muted)">Aún no hay partidas</p>'}
+      <h3 style="margin-top:14px">Modos jugados</h3>
+      <p style="color:var(--muted);font-size:.85rem">${[...modesPlayed].map(m=>(me[m]||'🎮')+' '+m).join(' · ')||'Ninguno aún'}</p>
+    `;
+  }catch(e){c.innerHTML='<p style="color:var(--red)">Error al cargar</p>';}
+}
+
+// ==================== BADGES SCREEN ====================
+function showBadges(){
+  showScreen('screenBadges');
+  const c=document.getElementById('badgesContent');
+  c.innerHTML='<p style="color:var(--muted);margin-bottom:16px;font-size:.9rem">'+userBadges.length+'/'+ALL_BADGES.length+' logros desbloqueados</p>';
+  const grid=document.createElement('div');grid.className='badges-grid';
+  ALL_BADGES.forEach(b=>{
+    const earned=userBadges.includes(b.id);
+    grid.innerHTML+=`<div class="badge ${earned?'earned':''}">
+      <div class="badge-icon">${earned?b.icon:'🔒'}</div>
+      <div class="badge-name">${lang==='en'?b.nameEN:b.nameES}</div>
+      <div style="font-size:.65rem;color:var(--muted);margin-top:2px">${earned?'✅':(lang==='en'?b.descEN:b.descES)}</div>
+    </div>`;
+  });
+  c.appendChild(grid);
+}
+
+// ==================== CONFETTI ====================
+function confetti(){
+  const colors=['#f5c518','#3b82f6','#22c55e','#ef4444','#8b5cf6','#fff'];
+  for(let i=0;i<40;i++){
+    const el=document.createElement('div');el.className='confetti-piece';
+    el.style.cssText=`left:${Math.random()*100}vw;background:${colors[Math.floor(Math.random()*colors.length)]};animation-delay:${Math.random()*.8}s;animation-duration:${1+Math.random()}s;width:${6+Math.random()*8}px;height:${6+Math.random()*8}px;`;
+    document.body.appendChild(el);setTimeout(()=>el.remove(),2500);
+  }
+}
+
+// ==================== TOAST ====================
+function toast(msg,type=''){
+  const el=document.getElementById('toast');el.textContent=msg;el.className='show'+(type?' '+type:'');
+  setTimeout(()=>el.className='',2600);
+}
+// Init lang
+document.getElementById('btnES').classList.toggle('active',lang==='es');
+document.getElementById('btnEN').classList.toggle('active',lang==='en');
+applyLang();
+</script>
+</body>
+</html>
